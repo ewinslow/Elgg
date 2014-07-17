@@ -6,7 +6,6 @@ use Elgg\Filesystem\File;
 use Elgg\Filesystem\Directory;
 use Elgg\Logger;
 use Elgg\PluginHooksService as Hooks;
-use Elgg\DeprecationWrapper;
 use Elgg\Http\Input;
 use Elgg\Views\Exception;
 
