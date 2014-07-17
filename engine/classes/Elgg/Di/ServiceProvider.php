@@ -56,13 +56,13 @@ use Zend\Mail\Transport\TransportInterface as Mailer;
  * @property-read \Elgg\SystemMessagesService              $systemMessages
  * @property-read \Elgg\I18n\Translator                    $translator
  * @property-read \Elgg\Database\UsersTable                $usersTable
- * @property-read \Elgg\ViewsService                       $views
+ * @property-read \Elgg\Views\Registry                     $views
  * @property-read \Elgg\WidgetsService                     $widgets
  * 
  * @package Elgg.Core
  * @access private
  */
-class ServiceProvider extends \Elgg\Di\DiContainer {
+class ServiceProvider extends DiContainer {
 
 	/**
 	 * Constructor
@@ -258,7 +258,8 @@ class ServiceProvider extends \Elgg\Di\DiContainer {
 		$this->setClassName('usersTable', \Elgg\Database\UsersTable::class);
 
 		$this->setFactory('views', function(ServiceProvider $c) {
-			return new \Elgg\ViewsService($c->hooks, $c->logger);
+			global $CONFIG;
+			return new \Elgg\Views\Registry($CONFIG, $c->events, $c->hooks, $c->input, $c->logger);
 		});
 
 		$this->setClassName('widgets', \Elgg\WidgetsService::class);

@@ -1,4 +1,8 @@
 <?php
+
+use Elgg\Filesystem\GaufretteDirectory;
+
+
 /**
  * Stores site-side plugin settings as private data.
  *
@@ -814,11 +818,13 @@ class ElggPlugin extends \ElggObject {
 	 * @return void
 	 */
 	protected function registerViews() {
-		if (!_elgg_services()->views->registerPluginViews($this->path, $failed_dir)) {
-			$msg = _elgg_services()->translator->translate('ElggPlugin:Exception:CannotRegisterViews',
-				array($this->getID(), $this->guid, $failed_dir));
-			throw new \PluginException($msg);
-		}
+		$views = _elgg_services()->views;
+		
+		$views_dir = GaufretteDirectory::createLocal("$this->path/views");
+		
+		$views->registerViewsDirectory($views_dir);
+
+		return true;
 	}
 
 	/**

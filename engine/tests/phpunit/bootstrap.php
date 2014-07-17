@@ -1,8 +1,14 @@
 <?php
 
+use Elgg\Filesystem\GaufretteDirectory;
 use Zend\Mail\Transport\InMemory as InMemoryTransport;
 
 require_once __DIR__ . '/../../../autoloader.php';
+
+$engine = dirname(dirname(dirname(__FILE__)));
+
+global $test_files;
+$test_files = GaufretteDirectory::createLocal("$engine/tests/phpunit/test_files");
 
 date_default_timezone_set('America/Los_Angeles');
 
