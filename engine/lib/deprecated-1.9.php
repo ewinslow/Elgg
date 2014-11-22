@@ -838,15 +838,7 @@ function get_metastring_id($string, $case_sensitive = TRUE) {
 			return false;
 		}
 
-		// Experimental memcache
-		$msfc = null;
-		static $metastrings_memcache;
-		if ((!$metastrings_memcache) && (is_memcache_available())) {
-			$metastrings_memcache = new \ElggMemcache('metastrings_memcache');
-		}
-		if ($metastrings_memcache) {
-			$msfc = $metastrings_memcache->load($string);
-		}
+		$msfc = _elgg_get_memcache('metastrings_memcache')->load($string);
 		if ($msfc) {
 			return $msfc;
 		}

@@ -2,6 +2,8 @@
 namespace Elgg\Database;
 
 use Elgg\Cache\MemoryPool;
+use Elgg\Database;
+use Elgg\Logger;
 
 /**
  * Persistent, installation-wide key-value storage.
@@ -15,31 +17,30 @@ use Elgg\Cache\MemoryPool;
  * @since      1.10.0
  */
 class Datalist {
-	
+
+	// The internal cache stores all DB rows as a single array.
 	const ALL_RESULTS_KEY = '*';
 	
-	/** @var \Elgg\Cache\Pool */
+	/** @var MemoryPool */
 	private $cache;
 
-	/** @var \Elgg\Database */
+	/** @var Database */
 	private $db;
 
-	/** @var string */
-	private $dbprefix;
-
-	/** @var \stdClass Global Elgg configuration */
+	/** @var Logger */
 	private $logger;
 
 	/**
-	 * Constructor
+	 * @param Database   $db       Elgg database
+	 * @param MemoryPool $cache    Memory cache
+	 * @param Logger     $logger   Elgg logger
 	 */
-	public function __construct() {
-		// TODO(ewinslow): Inject all these
+	public function __construct(Database $db, MemoryPool $cache, Logger $logger) {
 		// TODO(ewinslow): Add back memcached support
-		$this->cache = new MemoryPool();
-		$this->db = _elgg_services()->db;
-		$this->dbprefix = _elgg_services()->config->get('dbprefix');
-		$this->logger = _elgg_services()->logger;
+
+		$this->cache = $cache;
+		$this->db = $db;
+		$this->logger = $logger;
 	}
 	
 	/**
@@ -64,10 +65,9 @@ class Datalist {
 			return false;
 		}
 
-		return $this->cache->get($name, function() use ($name) {
-			$all = $this->loadAll();
-			return $all[$name];
-		});
+		// There's no gain in storing/managing individual cache keys. Just use the array.
+		$all = $this->loadAll();
+		return isset($all[$name]) ? $all[$name] : null;
 	}
 	
 	/**
@@ -95,14 +95,15 @@ class Datalist {
 			return false;
 		}
 	
-	
+		$dbprefix = $this->db->getTablePrefix();
 		$escaped_name = $this->db->sanitizeString($name);
 		$escaped_value = $this->db->sanitizeString($value);
-		$success = $this->db->insertData("INSERT INTO {$this->dbprefix}datalists"
-			. " SET name = '$escaped_name', value = '$escaped_value'"
-			. " ON DUPLICATE KEY UPDATE value = '$escaped_value'");
+		$success = $this->db->insertData("
+			INSERT INTO {$dbprefix}datalists
+			SET name = '$escaped_name', value = '$escaped_value'
+			ON DUPLICATE KEY UPDATE value = '$escaped_value'
+		");
 
-		$this->cache->invalidate($name);
 		$this->cache->invalidate(self::ALL_RESULTS_KEY);
 	
 		return $success !== false;
@@ -119,8 +120,9 @@ class Datalist {
 	 * @access private
 	 */
 	function loadAll() {
-		$this->cache->get(ALL_RESULTS_KEY, function() {
-			$result = $this->db->getData("SELECT * FROM {$this->dbprefix}datalists");
+		return $this->cache->get(self::ALL_RESULTS_KEY, function() {
+			$dbprefix = $this->db->getTablePrefix();
+			$result = $this->db->getData("SELECT * FROM {$dbprefix}datalists");
 			$map = array();
 			if (is_array($result)) {
 				foreach ($result as $row) {

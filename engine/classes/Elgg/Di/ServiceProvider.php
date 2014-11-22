@@ -1,5 +1,7 @@
 <?php
 namespace Elgg\Di;
+use Elgg\Cache\MemoryPool;
+use Elgg\Database\Datalist;
 
 /**
  * Provides common Elgg services.
@@ -21,6 +23,7 @@ namespace Elgg\Di;
  * @property-read \Elgg\PluginHooksService                 $hooks
  * @property-read \Elgg\Http\Input                         $input
  * @property-read \Elgg\Logger                             $logger
+ * @property-read \Stash\Pool|null                         $memcacheStashPool
  * @property-read \ElggVolatileMetadataCache               $metadataCache
  * @property-read \Elgg\Database\MetadataTable             $metadataTable
  * @property-read \Elgg\Notifications\NotificationsService $notifications
@@ -65,7 +68,7 @@ class ServiceProvider extends \Elgg\Di\DiContainer {
 		$this->setClassName('configTable', '\Elgg\Database\ConfigTable');
 		$this->setValue('context', new \Elgg\Context());
 		$this->setClassName('crypto', '\ElggCrypto');
-		$this->setClassName('datalist', '\Elgg\Database\Datalist');
+		$this->setFactory('datalist', array($this, 'getDatalist'));
 		$this->setFactory('db', array($this, 'getDatabase'));
 		$this->setClassName('entityTable', '\Elgg\Database\EntityTable');
 		$this->setFactory('events', array($this, 'getEvents'));
@@ -73,6 +76,7 @@ class ServiceProvider extends \Elgg\Di\DiContainer {
 		$this->setFactory('hooks', array($this, 'getHooks'));
 		$this->setClassName('input', 'Elgg\Http\Input');
 		$this->setFactory('logger', array($this, 'getLogger'));
+		$this->setFactory('memcacheStashPool', array($this, 'getMemcacheStashPool'));
 		$this->setClassName('metadataCache', '\ElggVolatileMetadataCache');
 		$this->setClassName('metadataTable', '\Elgg\Database\MetadataTable');
 		$this->setFactory('persistentLogin', array($this, 'getPersistentLogin'));
@@ -179,6 +183,16 @@ class ServiceProvider extends \Elgg\Di\DiContainer {
 	}
 
 	/**
+	 * Datalist factory
+	 *
+	 * @param \Elgg\Di\ServiceProvider $c Dependency injection container
+	 * @return \Elgg\Database\Datalist
+	 */
+	protected function getDatalist(\Elgg\Di\ServiceProvider $c) {
+		return new Datalist($c->db, new MemoryPool(), $c->logger);
+	}
+
+	/**
 	 * Session factory
 	 * 
 	 * @param \Elgg\Di\ServiceProvider $c Dependency injection container
@@ -222,6 +236,25 @@ class ServiceProvider extends \Elgg\Di\DiContainer {
 	protected function getRouter(\Elgg\Di\ServiceProvider $c) {
 		// TODO(evan): Init routes from plugins or cache
 		return new \Elgg\Router($c->hooks);
+	}
+
+	/**
+	 * Stash Memcache driver factory
+	 *
+	 * @param \Elgg\Di\ServiceProvider $c Dependency injection container
+	 * @return \Stash\Pool|null
+	 */
+	protected function getMemcacheStashPool(\Elgg\Di\ServiceProvider $c) {
+		$servers = $c->config->get('memcache_servers');
+		if (!$servers) {
+			return null;
+		}
+
+		$driver = new \Stash\Driver\Memcache();
+		$driver->setOptions(array(
+			'servers' => $servers,
+		));
+		return new \Stash\Pool($driver);
 	}
 
 	/**

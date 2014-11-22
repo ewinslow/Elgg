@@ -68,7 +68,7 @@ class EntityTable {
 	 * @see get_entity()
 	 * @access private
 	 *
-	 * @throws ClassException|InstallationException
+	 * @throws \ClassException|\InstallationException
 	 */
 	function rowToElggStar($row) {
 		if (!($row instanceof \stdClass)) {
@@ -82,13 +82,8 @@ class EntityTable {
 		$new_entity = false;
 	
 		// Create a memcache cache if we can
-		static $newentity_cache;
-		if ((!$newentity_cache) && (is_memcache_available())) {
-			$newentity_cache = new \ElggMemcache('new_entity_cache');
-		}
-		if ($newentity_cache) {
-			$new_entity = $newentity_cache->load($row->guid);
-		}
+		$memcache = _elgg_get_memcache('new_entity_cache');
+		$new_entity = $memcache->load($row->guid);
 		if ($new_entity) {
 			return $new_entity;
 		}
@@ -130,9 +125,7 @@ class EntityTable {
 		}
 	
 		// Cache entity if we have a cache available
-		if (($newentity_cache) && ($new_entity)) {
-			$newentity_cache->save($new_entity->guid, $new_entity);
-		}
+		$memcache->save($new_entity->guid, $new_entity);
 	
 		return $new_entity;
 	}
@@ -145,11 +138,6 @@ class EntityTable {
 	 * @return \ElggEntity The correct Elgg or custom object based upon entity type and subtype
 	 */
 	function get($guid) {
-		// This should not be a static local var. Notice that cache writing occurs in a completely
-		// different instance outside this function.
-		// @todo We need a single Memcache instance with a shared pool of namespace wrappers. This function would pull an instance from the pool.
-		static $shared_cache;
-	
 		// We could also use: if (!(int) $guid) { return false },
 		// but that evaluates to a false positive for $guid = true.
 		// This is a bit slower, but more thorough.
@@ -162,29 +150,18 @@ class EntityTable {
 		if ($new_entity) {
 			return $new_entity;
 		}
-	
-		// Check shared memory cache, if available
-		if (null === $shared_cache) {
-			if (is_memcache_available()) {
-				$shared_cache = new \ElggMemcache('new_entity_cache');
-			} else {
-				$shared_cache = false;
-			}
-		}
-	
+
 		// until ACLs in memcache, DB query is required to determine access
 		$entity_row = get_entity_as_row($guid);
 		if (!$entity_row) {
 			return false;
 		}
 	
-		if ($shared_cache) {
-			$cached_entity = $shared_cache->load($guid);
-			// @todo store ACLs in memcache https://github.com/elgg/elgg/issues/3018#issuecomment-13662617
-			if ($cached_entity) {
-				// @todo use ACL and cached entity access_id to determine if user can see it
-				return $cached_entity;
-			}
+		$cached_entity = _elgg_get_memcache('new_entity_cache')->load($guid);
+		// @todo store ACLs in memcache https://github.com/elgg/elgg/issues/3018#issuecomment-13662617
+		if ($cached_entity) {
+			// @todo use ACL and cached entity access_id to determine if user can see it
+			return $cached_entity;
 		}
 	
 		// don't let incomplete entities cause fatal exceptions

@@ -34,6 +34,8 @@ $METASTRINGS_CACHE = array();
 function elgg_get_metastring_id($string, $case_sensitive = true) {
 	global $CONFIG, $METASTRINGS_CACHE;
 
+	$metastrings_memcache = _elgg_get_memcache('metastrings_memcache');
+
 	// caching doesn't work for case insensitive requests
 	if ($case_sensitive) {
 		$result = array_search($string, $METASTRINGS_CACHE, true);
@@ -42,15 +44,7 @@ function elgg_get_metastring_id($string, $case_sensitive = true) {
 			return $result;
 		}
 
-		// Experimental memcache
-		$msfc = null;
-		static $metastrings_memcache;
-		if ((!$metastrings_memcache) && (is_memcache_available())) {
-			$metastrings_memcache = new \ElggMemcache('metastrings_memcache');
-		}
-		if ($metastrings_memcache) {
-			$msfc = $metastrings_memcache->load($string);
-		}
+		$msfc = $metastrings_memcache->load($string);
 		if ($msfc) {
 			return $msfc;
 		}
@@ -84,9 +78,7 @@ function elgg_get_metastring_id($string, $case_sensitive = true) {
 
 	$METASTRINGS_CACHE[$id] = $string;
 
-	if ($metastrings_memcache) {
-		$metastrings_memcache->save($string, $id);
-	}
+	$metastrings_memcache->save($string, $id);
 
 	return $id;
 }
@@ -701,15 +693,8 @@ function _elgg_delete_metastring_based_object_by_id($id, $type) {
 		// Tidy up if memcache is enabled.
 		// @todo only metadata is supported
 		if ($type == 'metadata') {
-			static $metabyname_memcache;
-			if ((!$metabyname_memcache) && (is_memcache_available())) {
-				$metabyname_memcache = new \ElggMemcache('metabyname_memcache');
-			}
-
-			if ($metabyname_memcache) {
-				// @todo why name_id? is that even populated?
-				$metabyname_memcache->delete("{$obj->entity_guid}:{$obj->name_id}");
-			}
+			// @todo why name_id? is that even populated?
+			_elgg_get_memcache('metabyname_memcache')->delete("{$obj->entity_guid}:{$obj->name_id}");
 		}
 
 		if ($obj->canEdit()) {
