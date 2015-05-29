@@ -134,7 +134,7 @@ final class GaufretteDirectory implements Directory {
 	 * 
 	 * @param string $path absolute path to directory on local filesystem.
 	 * 
-	 * @return Filesystem
+	 * @return self
 	 */
 	public static function createLocal($path) {
 		return new self(new Gaufrette(new Local($path)), $path);
@@ -143,7 +143,7 @@ final class GaufretteDirectory implements Directory {
 	/**
 	 * Shorthand for generating a new in-memory-only filesystem.
 	 * 
-	 * @return Filesystem
+	 * @return self
 	 */
 	public static function createInMemory() {
 		return new self(new Gaufrette(new InMemory()));

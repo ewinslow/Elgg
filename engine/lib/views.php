@@ -210,18 +210,18 @@ function elgg_unregister_external_view($view) {
  * @return string
  */
 function elgg_get_view_location($view, $viewtype = '') {
-	$views = _elgg_services()->views; 
+	$views = _elgg_services()->views;
 	$viewtype = $views->getOrCreateViewtype($viewtype ?: 'default');
 	$location = $views->getView($view)->getLocation($viewtype);
-	
-	if (!isset($location)) {
-		return null; // TODO(ewinslow): Or should we return the core viewpath?
+
+	if ($location) {
+		$stuff_to_remove = preg_quote("$viewtype/$view", '#');
+		if (preg_match("#(.*)$stuff_to_remove(\.php)?#", "$location", $matches)) {
+			return $matches[1];
+		}
 	}
-	
-	$matches = [];
-	preg_match("#(.*)$view(\.php)?#", "$location", $matches);
-	
-	return $matches[1] ?: null;
+
+	return dirname(dirname(__DIR__)) . "/views/";
 }
 
 /**
@@ -241,7 +241,15 @@ function elgg_get_view_location($view, $viewtype = '') {
  * @return void
  */
 function elgg_set_view_location($view, $location, $viewtype = '') {
-	_elgg_services()->views->setViewLocation($view, $location, $viewtype);
+	$views = _elgg_services()->views;
+	$viewtype = $views->getOrCreateViewtype($viewtype ?: 'default');
+
+	$dir = GaufretteDirectory::createLocal($location);
+
+	// TODO(ewinslow) how to determine real extension here?
+	$file = $dir->getFile("$viewtype/$view.php");
+
+	$views->getView($view)->setLocation($viewtype, $file);
 }
 
 /**

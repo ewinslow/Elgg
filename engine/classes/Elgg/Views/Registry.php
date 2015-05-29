@@ -41,10 +41,10 @@ class Registry {
 	private $views = array();
 
 	/** @var Viewtype */
-	private $currentViewtype = null;
+	private $current_viewtype = null;
 	
 	/** @var callable */
-	private $template_handler = NULL;
+	private $template_handler = null;
 
 	/**
 	 * Constructor
@@ -80,7 +80,7 @@ class Registry {
 	 * @return void
 	 */
 	public function setCurrentViewtype($viewtype = '') {
-		$this->currentViewtype = $this->getOrCreateViewtype($viewtype);
+		$this->current_viewtype = $this->getOrCreateViewtype($viewtype);
 	}
 	
 	/**
@@ -96,8 +96,8 @@ class Registry {
 	 * @return Viewtype
 	 */
 	public function getCurrentViewtype() {
-		if ($this->currentViewtype != null) {
-			return $this->currentViewtype;
+		if ($this->current_viewtype !== null) {
+			return $this->current_viewtype;
 		}
 
 		try {
@@ -238,6 +238,8 @@ class Registry {
 	 * @param string  $viewtype
 	 * @param boolean $bypass
 	 * @param boolean $issue_missing_notice
+	 *
+	 * @return string
 	 * 
 	 * @access private
 	 */
@@ -301,10 +303,12 @@ class Registry {
 	 * @param Directory $dir Base path of the plugin's views
 	 *
 	 * @access private
+	 *
+	 * @throws Exception\UnreadableDirectory
 	 */
 	public function registerViewsDirectory(Directory $dir) {
 		// plugins don't have to have views.
-		if (!$dir->isDirectory('/')) {
+		if (!is_dir($dir->getFullPath())) {
 			return;
 		}
 		
@@ -338,7 +342,8 @@ class Registry {
 	 * @access private
 	 */
 	public function getOverriddenLocations() {
-		return $this->overriden_locations;
+		return [];
+		// TODO(mrclay) fix me
 	}
 	
 	/**
@@ -350,6 +355,6 @@ class Registry {
 	 * @access private
 	 */
 	public function setOverriddenLocations(array $locations) {
-		$this->overriden_locations = $locations;
+		// TODO(mrclay) fix me
 	}
 }

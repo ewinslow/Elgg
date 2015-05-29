@@ -10,7 +10,7 @@ use Elgg\DeprecationWrapper;
  */
 class View {
 	/** @var bool */
-	private $isCacheable = false;
+	private $is_cacheable = false;
 	
 	/** @var File[] */
 	private $locations = array();
@@ -39,6 +39,8 @@ class View {
 		// If we got here then check whether this exists as an extension
 		if ($recurse) {
 			$extensions = array_merge($this->prepends, $this->appends);
+			/* @var View[] $extensions */
+
 			foreach ($extensions as $extension) {
 				// do not recursively check to stay away from infinite loops
 				if ($extension->exists($viewtype, false)) {
@@ -191,13 +193,13 @@ class View {
 	 * @param bool $cacheable
 	 */
 	public function setCacheable($cacheable) {
-		$this->isCacheable = $cacheable;
+		$this->is_cacheable = $cacheable;
 	}
 	
 	/**
 	 * @return bool 
 	 */
 	public function isCacheable() {
-		return $this->isCacheable;
+		return $this->is_cacheable;
 	}
 }

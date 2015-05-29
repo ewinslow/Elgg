@@ -55,7 +55,8 @@ class CacheHandler {
 
 			$this->application->bootCore();
 
-			if (!_elgg_is_view_cacheable($view)) {
+
+			if (!_elgg_services()->views->getView($view)->isCacheable()) {
 				$this->send403();
 			} else {
 				echo $this->renderView($view, $viewtype);
@@ -80,7 +81,7 @@ class CacheHandler {
 		$this->application->bootCore();
 
 		elgg_set_viewtype($viewtype);
-		if (!_elgg_is_view_cacheable($view)) {
+		if (!_elgg_services()->views->getView($view)->isCacheable()) {
 			$this->send403();
 		}
 
